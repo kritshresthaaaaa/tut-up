@@ -63,6 +63,49 @@ namespace Tutor.Application.Services.Student
             await _educationRepository.SaveChangesAsync();
             return new Response();
         }
+        public async Task<Response> UpdateStudentAsync(Guid id, UpdateStudentRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            var student = await _studentRepository.Table.FirstOrDefaultAsync(s => s.UserId == id);
+            if (user == null || student == null)
+            {
+                return new ErrorModel(System.Net.HttpStatusCode.NotFound, "Student not found!");
+            }
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
+            user.Address = request.Address;
+            user.DateOfBirth = request.DOB;
+            user.PhoneNumber = request.PhoneNumber;
+            user.ProfilePictureUrl = request.ProfilePicture;
+            student.GuardianName = request.GuardianName;
+            student.GuardianContact = request.GuardianContact;
+            user.Gender = request.Gender;
+            await _userManager.UpdateAsync(user);
+            await _studentRepository.SaveChangesAsync();
+            return new Response();
+
+            // TODO: Update educations
+          /*  if (request.Educations != null && request.Educations.Any())
+            {
+                var existingEducations = await _educationRepository.Table.Where(e => e.UserId == id).ToListAsync();
+                var educationsToRemove = existingEducations.Where(e => !request.Educations.Any(re => re.Id == e.Id)).ToList();
+
+                _educationRepository.DeleteRange(educations);
+                student.Educations = request.Educations.Select(e => new Education
+                {
+                    UserId = id,
+                    Degree = e.Degree,
+                    Institution = e.Institution,
+                    Stream = e.Stream,
+                    Grade = e.Grade,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate
+                }).ToList();
+            }*/
+
+
+
+        }
         public async Task<GenericResponse<IEnumerable<GetAllStudentsResponse>>> GetAllStudentsAsync()
         {
             var students = await (from s in _studentRepository.TableNoTracking
