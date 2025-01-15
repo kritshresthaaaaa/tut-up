@@ -82,29 +82,49 @@ namespace Tutor.Application.Services.Student
             user.Gender = request.Gender;
             await _userManager.UpdateAsync(user);
             await _studentRepository.SaveChangesAsync();
-            return new Response();
 
             // TODO: Update educations
-          /*  if (request.Educations != null && request.Educations.Any())
+            if(request.Educations != null && request.Educations.Any())
             {
                 var existingEducations = await _educationRepository.Table.Where(e => e.UserId == id).ToListAsync();
-                var educationsToRemove = existingEducations.Where(e => !request.Educations.Any(re => re.Id == e.Id)).ToList();
-
-                _educationRepository.DeleteRange(educations);
-                student.Educations = request.Educations.Select(e => new Education
+                var educationsToRemove = existingEducations
+                            .Where(e => !request.Educations.Any(re => re.Degree == e.Degree &&
+                                                                      re.Institution == e.Institution &&
+                                                                      re.Stream == e.Stream))
+                            .ToList();
+                _educationRepository.DeleteRange(educationsToRemove);
+                foreach (var education in request.Educations)
                 {
-                    UserId = id,
-                    Degree = e.Degree,
-                    Institution = e.Institution,
-                    Stream = e.Stream,
-                    Grade = e.Grade,
-                    StartDate = e.StartDate,
-                    EndDate = e.EndDate
-                }).ToList();
-            }*/
+                    var existingEducation = existingEducations
+                        .FirstOrDefault(e => e.Degree == education.Degree && e.Institution == education.Institution);  // Use appropriate matching logic
 
-
-
+                    if (existingEducation != null)
+                    {
+                        existingEducation.Stream = education.Stream;
+                        existingEducation.Grade = education.Grade;
+                        existingEducation.StartDate = education.StartDate;
+                        existingEducation.EndDate = education.EndDate;
+                    }
+                    else
+                    {
+                        // Add new education if it doesn't exist
+                        existingEducations.Add(new Education
+                        {
+                            UserId = id,
+                            Degree = education.Degree,
+                            Institution = education.Institution,
+                            Stream = education.Stream,
+                            Grade = education.Grade,
+                            StartDate = education.StartDate,
+                            EndDate = education.EndDate
+                        });
+                    }
+                }
+                await _educationRepository.AddRangeAsync(existingEducations);
+                await _educationRepository.SaveChangesAsync();
+            }
+            await _studentRepository.SaveChangesAsync();
+            return new Response();
         }
         public async Task<GenericResponse<IEnumerable<GetAllStudentsResponse>>> GetAllStudentsAsync()
         {
