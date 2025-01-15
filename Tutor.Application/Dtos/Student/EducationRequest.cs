@@ -1,8 +1,10 @@
-﻿namespace Tutor.Application.Dtos.Student
+﻿using Tutor.Domain.Enums;
+
+namespace Tutor.Application.Dtos.Student
 {
     public class EducationRequest
     {
-        public string Degree { get; set; }
+        public EducationDegree Degree { get; set; }
         public string Institution { get; set; }
         public string? Stream { get; set; }
         public string? Grade { get; set; }

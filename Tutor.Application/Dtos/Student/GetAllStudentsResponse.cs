@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Tutor.Domain.Enums;
 
 namespace Tutor.Application.Dtos.Student
 {
     public class GetAllStudentsEducationResponse
     {
-        public string Degree { get; set; }
+        public EducationDegree Degree { get; set; }
         public string Institution { get; set; }
         public string? Stream { get; set; }
         public string? Grade { get; set; }
