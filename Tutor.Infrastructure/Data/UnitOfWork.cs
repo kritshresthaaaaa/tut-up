@@ -1,52 +1,57 @@
-﻿using Tutor.Application.Common.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Tutor.Application.Common.Interfaces;
 
 namespace Tutor.Infrastructure.Data
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly TutorDbContext _dbContext;
-        private bool _transactionStarted = false;
-        private bool _disposed = false;
-        public UnitOfWork(TutorDbContext context)
-        {
-            _dbContext = context;
-        }
-        public async Task Commit()
-        {
-            if (_transactionStarted)
-            {
-                await _dbContext.SaveChangesAsync();
-                await _dbContext.Database.CommitTransactionAsync();
-                _transactionStarted = false;
-            }
+        private bool _disposed;
 
+        public UnitOfWork(TutorDbContext dbContext)
+        {
+            _dbContext = dbContext;
         }
+
         public async Task CreateTransaction()
         {
-            if (!_transactionStarted)
-            {
-                await _dbContext.Database.BeginTransactionAsync();
-                _transactionStarted = true;
-            }
+            await _dbContext.Database.BeginTransactionAsync();
+        }
 
+        public async Task Commit()
+        {
+            await _dbContext.Database.CommitTransactionAsync();
         }
 
         public async Task RollbackAsync()
         {
             await _dbContext.Database.RollbackTransactionAsync();
-            _transactionStarted = false;
         }
+
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
             {
-                _dbContext.Dispose();
+                if (disposing)
+                {
+                    _dbContext.Dispose();
+                }
                 _disposed = true;
             }
-        }
-        public async Task SaveChangesAsync()
-        {
-            await _dbContext.SaveChangesAsync();
         }
     }
 }

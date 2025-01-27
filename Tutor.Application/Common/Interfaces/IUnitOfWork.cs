@@ -5,6 +5,6 @@
         Task CreateTransaction();
         Task Commit();
         Task RollbackAsync();
-        Task SaveChangesAsync();
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

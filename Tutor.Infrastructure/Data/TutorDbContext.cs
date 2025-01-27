@@ -15,5 +15,6 @@ namespace Tutor.Infrastructure.Data
         public DbSet<Education> Education { get; set; }
         public DbSet<Student> Student { get; set; }
         public DbSet<Tutor.Domain.Entities.Tutor> Tutor { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

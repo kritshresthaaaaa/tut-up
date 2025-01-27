@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using System.Net;
-using System.Xml;
 using Tutor.Application.Common.Interfaces;
 using Tutor.Application.Common.Model.Error;
 
@@ -10,11 +9,16 @@ namespace Tutor.API.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ILogger<UnitOfWorkMiddleware> _logger;
 
-        public UnitOfWorkMiddleware(RequestDelegate next, IServiceScopeFactory serviceScopeFactory)
+        public UnitOfWorkMiddleware(
+            RequestDelegate next,
+            IServiceScopeFactory serviceScopeFactory,
+            ILogger<UnitOfWorkMiddleware> logger)
         {
             _next = next;
             _serviceScopeFactory = serviceScopeFactory;
+            _logger = logger;
         }
 
         public async Task Invoke(HttpContext context)
@@ -23,7 +27,9 @@ namespace Tutor.API.Middlewares
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
             var reqType = context.Request.Method;
-            if (reqType == "POST" || reqType == "PUT" || reqType == "DELETE")
+            bool isTransactionalRequest = reqType == "POST" || reqType == "PUT" || reqType == "DELETE";
+
+            if (isTransactionalRequest)
             {
                 await unitOfWork.CreateTransaction();
             }
@@ -32,17 +38,20 @@ namespace Tutor.API.Middlewares
             {
                 await _next(context);
 
-                if (reqType == "POST" || reqType == "PUT" || reqType == "DELETE")
+                if (isTransactionalRequest)
                 {
-                    await unitOfWork.Commit();
+                    await unitOfWork.SaveChangesAsync();
                 }
             }
             catch (Exception ex)
             {
-                if (reqType == "POST" || reqType == "PUT" || reqType == "DELETE")
+                _logger.LogError(ex, "An error occurred while processing the request.");
+
+                if (isTransactionalRequest)
                 {
                     await unitOfWork.RollbackAsync();
                 }
+
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -62,5 +71,4 @@ namespace Tutor.API.Middlewares
             await context.Response.WriteAsync(jsonResponse);
         }
     }
-
 }

@@ -57,10 +57,8 @@ namespace Tutor.Application.Services.Student
                     EndDate = e.EndDate
                 }).ToList();
             }
-
+          
             await _studentRepository.AddAsync(student);
-            await _studentRepository.SaveChangesAsync();
-            await _educationRepository.SaveChangesAsync();
             return new Response();
         }
         public async Task<Response> UpdateStudentAsync(Guid id, UpdateStudentRequest request)
@@ -80,11 +78,14 @@ namespace Tutor.Application.Services.Student
             student.GuardianName = request.GuardianName;
             student.GuardianContact = request.GuardianContact;
             user.Gender = request.Gender;
-            await _userManager.UpdateAsync(user);
-            await _studentRepository.SaveChangesAsync();
+            var userUpdateResult = await _userManager.UpdateAsync(user);
+            if (!userUpdateResult.Succeeded)
+            {
+                return new ErrorModel(System.Net.HttpStatusCode.BadRequest, "Error while updating User!");
+            }
 
             // TODO: Update educations
-            if(request.Educations != null && request.Educations.Any())
+            if (request.Educations != null && request.Educations.Any())
             {
                 var existingEducations = await _educationRepository.Table.Where(e => e.UserId == id).ToListAsync();
                 var educationsToRemove = existingEducations
@@ -121,7 +122,6 @@ namespace Tutor.Application.Services.Student
                     }
                 }
                 await _educationRepository.AddRangeAsync(existingEducations);
-                await _educationRepository.SaveChangesAsync();
             }
             await _studentRepository.SaveChangesAsync();
             return new Response();
@@ -151,8 +151,8 @@ namespace Tutor.Application.Services.Student
                 UserId = s.Student.UserId,
                 StudentId = s.Student.Id,
                 FullName = s.User.FirstName + " " + s.User.LastName,
-                Email = s.User.Email,
-                Phone = s.User.PhoneNumber,
+                Email = s.User.Email!,
+                Phone = s.User.PhoneNumber!,
                 GuardianContact = s.Student.GuardianContact,
                 GuardianName = s.Student.GuardianName,
                 Address = s.User.Address,
