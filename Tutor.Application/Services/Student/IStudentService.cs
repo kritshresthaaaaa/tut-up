@@ -12,6 +12,7 @@ namespace Tutor.Application.Services.Student
     public interface IStudentService
     {
         Task<Response> CreateStudentAsync(CreateStudentRequest request);
+        Task<Response> UpdateStudentAsync(Guid id, UpdateStudentRequest request);
         Task<GenericResponse<IEnumerable<GetAllStudentsResponse>>> GetAllStudentsAsync();
     }
 }

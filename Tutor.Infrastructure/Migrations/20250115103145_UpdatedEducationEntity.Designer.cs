@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Tutor.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Tutor.Infrastructure.Data;
 namespace Tutor.Infrastructure.Migrations
 {
     [DbContext(typeof(TutorDbContext))]
-    partial class TutorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250115103145_UpdatedEducationEntity")]
+    partial class UpdatedEducationEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -174,67 +177,6 @@ namespace Tutor.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Education");
-                });
-
-            modelBuilder.Entity("Tutor.Domain.Entities.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CreatedByIp")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<DateTime>("Expires")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsRevoked")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("LastModifiedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("LastModifiedTime")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("ReplacedByToken")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Tutor.Domain.Entities.Role", b =>
@@ -583,17 +525,6 @@ namespace Tutor.Infrastructure.Migrations
                         .WithMany("Educations")
                         .HasForeignKey("TutorId");
 
-                    b.HasOne("Tutor.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Tutor.Domain.Entities.RefreshToken", b =>
-                {
                     b.HasOne("Tutor.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")

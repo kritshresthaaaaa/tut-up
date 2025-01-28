@@ -26,6 +26,17 @@ namespace Tutor.API.Controllers
                 return response;
             }
             return Ok(response);
+        }   
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Response>> UpdateStudentAsync(Guid id, [FromBody] UpdateStudentRequest request)
+        {
+            var response = await _studentService.UpdateStudentAsync(id, request);
+            if (!response.IsSuccess)
+            {
+                return response;
+            }
+            return Ok(response);
+
         }
         [HttpGet]
         public async Task<ActionResult<IGenericRepository<IEnumerable<GetAllStudentsResponse>>>> GetAllStudentsAsync()

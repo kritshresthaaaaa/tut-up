@@ -1,52 +1,51 @@
-﻿using Tutor.Application.Common.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Tutor.Application.Common.Interfaces;
 
 namespace Tutor.Infrastructure.Data
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly TutorDbContext _dbContext;
-        private bool _transactionStarted = false;
-        private bool _disposed = false;
-        public UnitOfWork(TutorDbContext context)
+        private IDbContextTransaction _transaction;
+
+        public UnitOfWork(TutorDbContext dbContext)
         {
-            _dbContext = context;
+            _dbContext = dbContext;
         }
-        public async Task Commit()
+
+        public void CreateTransaction()
         {
-            if (_transactionStarted)
+            _transaction = _dbContext.Database.BeginTransaction();
+        }
+
+
+        public void Commit()
+        {
+            try
             {
-                await _dbContext.SaveChangesAsync();
-                await _dbContext.Database.CommitTransactionAsync();
-                _transactionStarted = false;
+                _dbContext.SaveChanges();
+                _transaction?.Commit();
             }
-
-        }
-        public async Task CreateTransaction()
-        {
-            if (!_transactionStarted)
+            catch
             {
-                await _dbContext.Database.BeginTransactionAsync();
-                _transactionStarted = true;
+                Rollback();
+                throw;
             }
-
         }
 
-        public async Task RollbackAsync()
+        public void Rollback()
         {
-            await _dbContext.Database.RollbackTransactionAsync();
-            _transactionStarted = false;
+            _transaction?.Rollback();
         }
+
         public void Dispose()
         {
-            if (!_disposed)
-            {
-                _dbContext.Dispose();
-                _disposed = true;
-            }
-        }
-        public async Task SaveChangesAsync()
-        {
-            await _dbContext.SaveChangesAsync();
+            _transaction?.Dispose();
+            _dbContext.Dispose();
         }
     }
 }

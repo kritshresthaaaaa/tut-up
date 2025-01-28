@@ -1,9 +1,6 @@
 using MajaDum.Application.Configuration;
-using Microsoft.EntityFrameworkCore;
 using Tutor.API.Middlewares;
-using Tutor.Application.Common.Interfaces;
 using Tutor.Infrastructure.Configuration;
-using Tutor.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +15,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApplicationService();
 builder.Services.AddInfrastructureService(builder.Configuration);
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

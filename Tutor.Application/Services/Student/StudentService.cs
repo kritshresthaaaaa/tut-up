@@ -4,6 +4,7 @@ using Tutor.Application.Common.Interfaces;
 using Tutor.Application.Common.Model.Error;
 using Tutor.Application.Common.Model.Response;
 using Tutor.Application.Dtos.Student;
+using Tutor.Application.Services.Authentication;
 using Tutor.Domain.Entities;
 
 namespace Tutor.Application.Services.Student
@@ -13,7 +14,8 @@ namespace Tutor.Application.Services.Student
         private readonly UserManager<User> _userManager;
         private readonly IGenericRepository<Tutor.Domain.Entities.Student> _studentRepository;
         private readonly IGenericRepository<Education> _educationRepository;
-        public StudentService(UserManager<User> userManager, IGenericRepository<Tutor.Domain.Entities.Student> studentRepository, IGenericRepository<Education> educationRepository)
+        private readonly IAuthService _authService;
+        public StudentService(IAuthService authService, UserManager<User> userManager, IGenericRepository<Tutor.Domain.Entities.Student> studentRepository, IGenericRepository<Education> educationRepository)
         {
             _userManager = userManager;
             _studentRepository = studentRepository;
@@ -59,8 +61,77 @@ namespace Tutor.Application.Services.Student
             }
 
             await _studentRepository.AddAsync(student);
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var resetLink  = _authService.GeneratePasswordResetLink(user.Email, token);
+            
+            return new Response();
+        }
+
+        public async Task<Response> UpdateStudentAsync(Guid id, UpdateStudentRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            var student = await _studentRepository.Table.FirstOrDefaultAsync(s => s.UserId == id);
+            if (user == null || student == null)
+            {
+                return new ErrorModel(System.Net.HttpStatusCode.NotFound, "Student not found!");
+            }
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
+            user.Address = request.Address;
+            user.DateOfBirth = request.DOB;
+            user.PhoneNumber = request.PhoneNumber;
+            user.ProfilePictureUrl = request.ProfilePicture;
+            student.GuardianName = request.GuardianName;
+            student.GuardianContact = request.GuardianContact;
+            user.Gender = request.Gender;
+            var userUpdateResult = await _userManager.UpdateAsync(user);
+            if (!userUpdateResult.Succeeded)
+            {
+                return new ErrorModel(System.Net.HttpStatusCode.BadRequest, "Error while updating User!");
+            }
+
+            // TODO: Update educations
+            if (request.Educations != null && request.Educations.Any())
+            {
+                var existingEducations = await _educationRepository.Table.Where(e => e.UserId == id).ToListAsync();
+                var educationsToRemove = existingEducations
+                            .Where(e => !request.Educations.Any(re => re.Degree == e.Degree &&
+                                                                      re.Institution == e.Institution &&
+                                                                      re.Stream == e.Stream))
+                            .ToList();
+                _educationRepository.DeleteRange(educationsToRemove);
+                foreach (var education in request.Educations)
+                {
+                    var existingEducation = existingEducations
+                        .FirstOrDefault(e => e.Degree == education.Degree && e.Institution == education.Institution);  // Use appropriate matching logic
+
+                    if (existingEducation != null)
+                    {
+                        existingEducation.Stream = education.Stream;
+                        existingEducation.Grade = education.Grade;
+                        existingEducation.StartDate = education.StartDate;
+                        existingEducation.EndDate = education.EndDate;
+                    }
+                    else
+                    {
+                        // Add new education if it doesn't exist
+                        existingEducations.Add(new Education
+                        {
+                            UserId = id,
+                            Degree = education.Degree,
+                            Institution = education.Institution,
+                            Stream = education.Stream,
+                            Grade = education.Grade,
+                            StartDate = education.StartDate,
+                            EndDate = education.EndDate
+                        });
+                    }
+                }
+                await _educationRepository.AddRangeAsync(existingEducations);
+            }
             await _studentRepository.SaveChangesAsync();
-            await _educationRepository.SaveChangesAsync();
             return new Response();
         }
         public async Task<GenericResponse<IEnumerable<GetAllStudentsResponse>>> GetAllStudentsAsync()
@@ -88,8 +159,8 @@ namespace Tutor.Application.Services.Student
                 UserId = s.Student.UserId,
                 StudentId = s.Student.Id,
                 FullName = s.User.FirstName + " " + s.User.LastName,
-                Email = s.User.Email,
-                Phone = s.User.PhoneNumber,
+                Email = s.User.Email!,
+                Phone = s.User.PhoneNumber!,
                 GuardianContact = s.Student.GuardianContact,
                 GuardianName = s.Student.GuardianName,
                 Address = s.User.Address,
@@ -105,8 +176,7 @@ namespace Tutor.Application.Services.Student
             }).ToList();
 
             return response;
-
-
         }
+
     }
 }

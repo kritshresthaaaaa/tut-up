@@ -21,4 +21,12 @@
         Failed = 5,
         Pending = 6
     }
+    public enum EducationDegree
+    {
+        Schooling = 1,
+        HighSchooling = 2,
+        UnderGraduate = 3,
+        PostGraduate = 4,
+        Doctorate = 5
+    }
 }
