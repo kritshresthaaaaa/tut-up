@@ -1,9 +1,6 @@
 using MajaDum.Application.Configuration;
-using Microsoft.EntityFrameworkCore;
 using Tutor.API.Middlewares;
-using Tutor.Application.Common.Interfaces;
 using Tutor.Infrastructure.Configuration;
-using Tutor.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 

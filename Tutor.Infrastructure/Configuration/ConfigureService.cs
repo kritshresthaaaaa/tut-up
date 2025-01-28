@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Tutor.Application.Common.Interfaces;
 using Tutor.Domain.Entities;
+using Tutor.Infrastructure.Configuration.EmailConfiguration;
 using Tutor.Infrastructure.Data;
 
 namespace Tutor.Infrastructure.Configuration
@@ -22,6 +23,8 @@ namespace Tutor.Infrastructure.Configuration
             service.AddDbContext(configuration);
             service.AddIdentity(configuration);
             service.AddJwtConfiguration(configuration);
+            service.AddEmailConfiguration(configuration);
+            service.AddScoped<IEmailService, EmailService>();
             //generic repository
         }
         private static void AddIdentity(this IServiceCollection services, IConfiguration configuration)
@@ -85,6 +88,10 @@ namespace Tutor.Infrastructure.Configuration
             }
             );
 
+        }
+        private static void AddEmailConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
         }
     }
 }

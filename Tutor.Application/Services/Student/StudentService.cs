@@ -4,6 +4,7 @@ using Tutor.Application.Common.Interfaces;
 using Tutor.Application.Common.Model.Error;
 using Tutor.Application.Common.Model.Response;
 using Tutor.Application.Dtos.Student;
+using Tutor.Application.Services.Authentication;
 using Tutor.Domain.Entities;
 
 namespace Tutor.Application.Services.Student
@@ -13,7 +14,8 @@ namespace Tutor.Application.Services.Student
         private readonly UserManager<User> _userManager;
         private readonly IGenericRepository<Tutor.Domain.Entities.Student> _studentRepository;
         private readonly IGenericRepository<Education> _educationRepository;
-        public StudentService(UserManager<User> userManager, IGenericRepository<Tutor.Domain.Entities.Student> studentRepository, IGenericRepository<Education> educationRepository)
+        private readonly IAuthService _authService;
+        public StudentService(IAuthService authService, UserManager<User> userManager, IGenericRepository<Tutor.Domain.Entities.Student> studentRepository, IGenericRepository<Education> educationRepository)
         {
             _userManager = userManager;
             _studentRepository = studentRepository;
@@ -57,10 +59,16 @@ namespace Tutor.Application.Services.Student
                     EndDate = e.EndDate
                 }).ToList();
             }
-          
+
             await _studentRepository.AddAsync(student);
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var resetLink  = _authService.GeneratePasswordResetLink(user.Email, token);
+            
             return new Response();
         }
+
         public async Task<Response> UpdateStudentAsync(Guid id, UpdateStudentRequest request)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
@@ -168,8 +176,7 @@ namespace Tutor.Application.Services.Student
             }).ToList();
 
             return response;
-
-
         }
+
     }
 }

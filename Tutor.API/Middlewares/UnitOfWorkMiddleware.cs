@@ -8,30 +8,26 @@ namespace Tutor.API.Middlewares
     public class UnitOfWorkMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger<UnitOfWorkMiddleware> _logger;
+        private readonly IUnitOfWork _unitOfWork;
 
         public UnitOfWorkMiddleware(
             RequestDelegate next,
-            IServiceScopeFactory serviceScopeFactory,
             ILogger<UnitOfWorkMiddleware> logger)
         {
             _next = next;
-            _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, IUnitOfWork unitOfWork)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
             var reqType = context.Request.Method;
             bool isTransactionalRequest = reqType == "POST" || reqType == "PUT" || reqType == "DELETE";
 
             if (isTransactionalRequest)
             {
-                await unitOfWork.CreateTransaction();
+                unitOfWork.CreateTransaction();
             }
 
             try
@@ -40,7 +36,7 @@ namespace Tutor.API.Middlewares
 
                 if (isTransactionalRequest)
                 {
-                    await unitOfWork.SaveChangesAsync();
+                    unitOfWork.Commit();
                 }
             }
             catch (Exception ex)
@@ -49,7 +45,7 @@ namespace Tutor.API.Middlewares
 
                 if (isTransactionalRequest)
                 {
-                    await unitOfWork.RollbackAsync();
+                    unitOfWork.Rollback();
                 }
 
                 await HandleExceptionAsync(context, ex);

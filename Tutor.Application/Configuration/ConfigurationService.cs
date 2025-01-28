@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Tutor.Application.Common.Interfaces;
+using Tutor.Application.Services.Authentication;
 using Tutor.Application.Services.CurrentUser;
 using Tutor.Application.Services.Student;
 
@@ -10,6 +12,7 @@ namespace MajaDum.Application.Configuration
         {
             services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IAuthService, AuthService>();
         }
     }
 }

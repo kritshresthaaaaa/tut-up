@@ -2,9 +2,8 @@
 {
     public interface IUnitOfWork : IDisposable
     {
-        Task CreateTransaction();
-        Task Commit();
-        Task RollbackAsync();
-        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+        void CreateTransaction();
+        void Commit();
+        void Rollback();
     }
 }

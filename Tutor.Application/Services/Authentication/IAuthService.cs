@@ -6,6 +6,7 @@ namespace Tutor.Application.Services.Authentication
     public interface IAuthService
     {
         Task<GenericResponse<AuthResponse>> AuthenticateAsync(AuthenticateRequest request);
+        string GeneratePasswordResetLink(string email,string token);
 
     }
 }

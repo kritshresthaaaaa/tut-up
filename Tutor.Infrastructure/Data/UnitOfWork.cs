@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,49 +10,42 @@ namespace Tutor.Infrastructure.Data
     public class UnitOfWork : IUnitOfWork
     {
         private readonly TutorDbContext _dbContext;
-        private bool _disposed;
+        private IDbContextTransaction _transaction;
 
         public UnitOfWork(TutorDbContext dbContext)
         {
             _dbContext = dbContext;
         }
 
-        public async Task CreateTransaction()
+        public void CreateTransaction()
         {
-            await _dbContext.Database.BeginTransactionAsync();
+            _transaction = _dbContext.Database.BeginTransaction();
         }
 
-        public async Task Commit()
+
+        public void Commit()
         {
-            await _dbContext.Database.CommitTransactionAsync();
+            try
+            {
+                _dbContext.SaveChanges();
+                _transaction?.Commit();
+            }
+            catch
+            {
+                Rollback();
+                throw;
+            }
         }
 
-        public async Task RollbackAsync()
+        public void Rollback()
         {
-            await _dbContext.Database.RollbackTransactionAsync();
-        }
-
-        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            return await _dbContext.SaveChangesAsync(cancellationToken);
+            _transaction?.Rollback();
         }
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    _dbContext.Dispose();
-                }
-                _disposed = true;
-            }
+            _transaction?.Dispose();
+            _dbContext.Dispose();
         }
     }
 }

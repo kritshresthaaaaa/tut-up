@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -17,11 +18,13 @@ namespace Tutor.Application.Services.Authentication
         private readonly UserManager<User> _userManager;
         private readonly IConfiguration _configuration;
         private readonly IGenericRepository<RefreshToken> _refreshTokenRepository;
-        public AuthService(UserManager<User> userManager, IConfiguration configuration, IGenericRepository<RefreshToken> refreshTokenRepository)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public AuthService(IHttpContextAccessor httpContextAccessor, UserManager<User> userManager, IConfiguration configuration, IGenericRepository<RefreshToken> refreshTokenRepository)
         {
             _userManager = userManager;
             _configuration = configuration;
             _refreshTokenRepository = refreshTokenRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<GenericResponse<AuthResponse>> AuthenticateAsync(AuthenticateRequest request)
@@ -49,6 +52,7 @@ namespace Tutor.Application.Services.Authentication
                     FullName = user.FirstName + " " + user.LastName,
                     Role = role.FirstOrDefault()!.ToString()
                 };
+                var refreshToken = await GenerateRefreshTokenAsync(user.Id, _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
                 return response;
             }
             else
@@ -100,6 +104,14 @@ namespace Tutor.Application.Services.Authentication
                 CreatedByIp = refreshToken.CreatedByIp
             };
             return response;
+        }
+        public  string GeneratePasswordResetLink(string email, string token)
+        {
+            var encodedToken = Uri.EscapeDataString(token);
+
+            var resetUrl = $"https://yourapp.com/reset-password?email={email}&token={encodedToken}";
+
+            return resetUrl;
         }
     }
 }
